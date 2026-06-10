@@ -81,6 +81,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
+  const [validationError, setValidationError] = useState(null);
   const [backendError, setBackendError] = useState(null);
   const [predictionMade, setPredictionMade] = useState(false);
 
@@ -88,10 +89,11 @@ function App() {
     setMatchScore(null);
     setIdentifiedSkills([]);
     setSkillGaps([]);
+    setValidationError(null);
     setBackendError(null);
 
     if (!file || !jd.trim()) {
-      setBackendError('Please upload a resume and enter a job description.');
+      setValidationError('Please upload a resume and enter a job description.');
       setPredictionMade(false);
       return;
     }
@@ -238,6 +240,15 @@ function App() {
               <span className="upload-hint">Drag and drop is supported</span>
             </label>
             <textarea value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste Job Description here..."></textarea>
+            {validationError && (
+              <div className="backend-error-banner" role="alert">
+                <span className="backend-error-dot" />
+                <div>
+                  <strong>Input required</strong>
+                  <p>{validationError}</p>
+                </div>
+              </div>
+            )}
             {backendError && (
               <div className="backend-error-banner" role="alert">
                 <span className="backend-error-dot" />
