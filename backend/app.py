@@ -28,17 +28,20 @@ def extract_text(file):
 
 @app.route('/analyze', methods=['POST'])
 def analyze_resume():
-    if 'resume' not in request.files or 'job_description' not in request.form:
+    payload = request.get_json(silent=True) or {}
+    resume_text = payload.get('resume_text', '')
+    jd_text = payload.get('job_description', '')
+    file_name = payload.get('file_name', '')
+
+    if (not resume_text or not jd_text) and 'resume' in request.files and 'job_description' in request.form:
+        resume_file = request.files['resume']
+        jd_text = request.form['job_description']
+        resume_text = extract_text(resume_file)
+        file_name = resume_file.filename
+
+    if not resume_text or not jd_text:
         return jsonify({"error": "Missing Data: Please upload a resume and enter a JD."}), 400
-
-    resume_file = request.files['resume']
-    jd_text = request.form['job_description']
     
-    # Step 1: Text Extraction from File
-    resume_text = extract_text(resume_file)
-    if not resume_text:
-        return jsonify({"error": "Could not read text from the uploaded resume."}), 400
-
     # Step 2: AI Calculation (TF-IDF & Cosine Similarity)
     # References SRS Section 2.2 for Mathematical Modeling
     match_score = calculate_match_score(resume_text, jd_text)
@@ -63,7 +66,8 @@ def analyze_resume():
         "verdict": verdict,
         "matching_skills": [skill.capitalize() for skill in present_skills],
         "missing_skills": [skill.capitalize() for skill in missing_skills],
-        "file_name": resume_file.filename
+        "resume_text": resume_text,
+        "file_name": file_name
     })
 
 if __name__ == '__main__':
