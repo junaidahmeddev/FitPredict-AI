@@ -1,10 +1,9 @@
 flask
 flask-cors
-spacy
+nltk
+scikit-learn
+gunicorn
 PyPDF2
 docx2txt
 pandas
-scikit-learn
-gunicorn
-nltk
 numpy
