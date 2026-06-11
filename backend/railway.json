@@ -5,5 +5,8 @@
   "deploy": {
     "rootDirectory": "backend",
     "startCommand": "gunicorn app:app"
+  },
+  "env": {
+    "MISE_PYTHON_GITHUB_ATTESTATIONS": "false"
   }
 }
