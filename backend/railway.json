@@ -1,0 +1,9 @@
+{
+  "build": {
+    "rootDirectory": "backend"
+  },
+  "deploy": {
+    "rootDirectory": "backend",
+    "startCommand": "gunicorn app:app"
+  }
+}
