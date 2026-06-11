@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const API_BASE_URL = 'https://fit-predict-ai.vercel.app';
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
+  : 'https://lucky-perfection-production-c457.up.railway.app';
 const DEVELOPER_SKILLS = ['python', 'sql', 'flask', 'fastapi', 'git', 'github', 'nltk', 'machine learning'];
 const DESIGN_SKILLS = ['photoshop', 'illustrator', 'figma', 'indesign', 'typography', 'ui/ux', 'branding'];
 const ALL_SKILLS = [...DEVELOPER_SKILLS, ...DESIGN_SKILLS];
