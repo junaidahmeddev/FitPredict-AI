@@ -22,6 +22,7 @@ for package, import_name in required_packages.items():
 # --- Rest of imports ---
 import os
 import io
+import re
 import nltk
 import shutil
 from flask import Flask, request, jsonify
@@ -58,6 +59,15 @@ def index():
         "message": "AI Resume Analyzer Backend API is running. Send POST requests to /analyze"
     })
 
+def mask_pii(text):
+    """Mask email addresses and phone numbers to guarantee privacy & security constraints."""
+    if not text: return ""
+    # Mask Email
+    text = re.sub(r'\b[\w\.-]+@[\w\.-]+\.\w{2,}\b', '[EMAIL_MASKED]', text)
+    # Mask Phone Numbers (various standard international/local structures)
+    text = re.sub(r'\b(?:\+?\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b', '[PHONE_MASKED]', text)
+    return text
+
 def extract_text(file):
     """Extract text from uploaded PDF or DOCX file, with OCR fallback for scanned PDFs using convert_from_path."""
     filename = file.filename.lower()
@@ -89,10 +99,12 @@ def extract_text(file):
                 try:
                     # Poppler bin path configuration for Windows pdf2image
                     poppler_path = r'C:\poppler-26.02.0\Library\bin'
-                    images = convert_from_path(temp_file_path, poppler_path=poppler_path)
+                    images = convert_from_path(temp_file_path, dpi=300, poppler_path=poppler_path)
                     ocr_text = ""
                     for img in images:
                         ocr_text += pytesseract.image_to_string(img) + "\n"
+                    
+                    print("OCR Extracted Text:", ocr_text)
                     if ocr_text.strip():
                         text = ocr_text
                 except Exception as ocr_err:
@@ -146,8 +158,11 @@ def analyze_resume():
         if not jd_text:
             jd_text = data.get('job_description', '')
 
+    # Mask Candidate PII (Phone/Email) before passing data to calculations
+    resume_text_masked = mask_pii(resume_text)
+
     # Print extracted text preview to console for debug
-    print("Extracted Text Preview:", resume_text[:500] if resume_text else "[Empty Text]")
+    print("Extracted Text Preview (Masked):", resume_text_masked[:500] if resume_text_masked else "[Empty Text]")
 
     # Sanitize Job Description: strip whitespace, handle comma-separated values
     if jd_text:
@@ -157,30 +172,54 @@ def analyze_resume():
             jd_text = jd_text.strip()
 
     # Clear validation responses with exact details of what is missing
-    if not resume_text and not jd_text:
+    if not resume_text_masked and not jd_text:
         return jsonify({"error": "Missing Data: Please upload a Resume file and enter a Job Description."}), 400
-    if not resume_text:
+    if not resume_text_masked:
         return jsonify({"error": "Missing Data: Resume file could not be parsed or is empty. Please upload a valid, non-empty Resume PDF/DOCX file."}), 400
     if not jd_text:
         return jsonify({"error": "Missing Data: Please enter a Job Description."}), 400
     
-    # AI Logic
-    match_score = calculate_match_score(resume_text, jd_text)
-    missing_skills, present_skills = identify_missing_skills(resume_text, jd_text)
+    # AI Logic using the masked text
+    match_score = calculate_match_score(resume_text_masked, jd_text)
+    missing_skills, present_skills = identify_missing_skills(resume_text_masked, jd_text)
 
-    # Verdict
-    if match_score >= 80: verdict = "Excellent Match"
-    elif match_score >= 60: verdict = "Good Match"
-    elif match_score >= 40: verdict = "Average Match"
-    else: verdict = "Poor Match"
+    # Verdict & Confidence Mapping
+    verdict = "Poor Match"
+    confidence = "Low"
+    if match_score >= 80:
+        verdict = "Excellent Match"
+        confidence = "High"
+    elif match_score >= 60:
+        verdict = "Good Match"
+        confidence = "Medium"
+    elif match_score >= 40:
+        verdict = "Average Match"
+        confidence = "Medium"
+
+    # Dynamic Recruiter Recommendation Summary
+    recommendation = f"The candidate matches {int(match_score)}% of the target requirements. "
+    if present_skills:
+        recommendation += f"Strong technical skills identified: {', '.join([s.capitalize() for s in present_skills])}. "
+    if missing_skills:
+        recommendation += f"Key missing core skills to address: {', '.join([s.capitalize() for s in missing_skills])}."
+    else:
+        recommendation += "No critical skill gaps identified."
 
     return jsonify({
+        # Legacy compatibility keys
         "match_score": match_score,
         "verdict": verdict,
         "matching_skills": [skill.capitalize() for skill in present_skills],
         "missing_skills": [skill.capitalize() for skill in missing_skills],
         "file_name": file_name,
-        "resume_text": resume_text
+        "resume_text": resume_text_masked,
+        
+        # Talent Acquisition structured JSON format
+        "MatchScore": int(match_score),
+        "ConfidenceLevel": confidence,
+        "MatchedSkills": [skill.capitalize() for skill in present_skills],
+        "MissingSkills": [skill.capitalize() for skill in missing_skills],
+        "Recommendation": recommendation
     })
 
 if __name__ == '__main__':

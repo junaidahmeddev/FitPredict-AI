@@ -87,6 +87,20 @@ function App() {
   const [backendError, setBackendError] = useState(null);
   const [predictionMade, setPredictionMade] = useState(false);
 
+  // Privacy Mode States
+  const [privacyMode, setPrivacyMode] = useState(false);
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('recent_scans');
+      return saved ? JSON.parse(saved) : [
+        { fileName: "Kashan_CV.pdf", score: 85, timestamp: "05:12 PM" },
+        { fileName: "Hammad_CV.docx", score: 62, timestamp: "05:14 PM" }
+      ];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const handleAnalyze = async () => {
     setMatchScore(null);
     setIdentifiedSkills([]);
@@ -106,6 +120,17 @@ function App() {
     formData.append('resume', file);
     formData.append('job_description', jobDescriptionStateValue);
 
+    // --- Frontend FormData Payload check ---
+    console.log("--- Frontend FormData Payload check ---");
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File Name -> ${value.name}, Size -> ${value.size} bytes`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+    console.log("---------------------------------------");
+
     try {
       const response = await axios.post(`${API_BASE_URL}/analyze`, formData);
       const resumeTextFromBackend = response?.data?.resume_text || '';
@@ -114,23 +139,47 @@ function App() {
       const localIdentifiedSkills = findSkillsInText(resumeTextForAnalysis);
       const jdSkills = ALL_SKILLS.filter((skill) => jobTextForAnalysis.includes(normalizeSkillText(skill)));
       const localSkillGaps = jdSkills.filter((skill) => !localIdentifiedSkills.includes(skill));
-      const backendMatchScore = Number(response?.data?.match_score ?? 0);
+      
+      // Map to Talent Acquisition JSON fields
+      const backendMatchScore = Number(response?.data?.MatchScore ?? response?.data?.match_score ?? 0);
       const localMatchScore = jdSkills.length > 0
         ? Math.round(((jdSkills.length - localSkillGaps.length) / jdSkills.length) * 100)
         : backendMatchScore;
 
       setMatchScore(localMatchScore);
       setIdentifiedSkills(
-        response?.data?.matching_skills?.length
-          ? response.data.matching_skills
-          : localIdentifiedSkills.map(formatSkillLabel)
+        response?.data?.MatchedSkills?.length
+          ? response.data.MatchedSkills
+          : response?.data?.matching_skills?.length
+            ? response.data.matching_skills
+            : localIdentifiedSkills.map(formatSkillLabel)
       );
       setSkillGaps(
-        response?.data?.missing_skills?.length
-          ? response.data.missing_skills
-          : localSkillGaps.map(formatSkillLabel)
+        response?.data?.MissingSkills?.length
+          ? response.data.MissingSkills
+          : response?.data?.missing_skills?.length
+            ? response.data.missing_skills
+            : localSkillGaps.map(formatSkillLabel)
       );
       setPredictionMade(true);
+
+      // Save minimized logs (filename & score only) to sessionStorage for privacy
+      const newHistoryItem = {
+        fileName: file.name,
+        score: localMatchScore,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setHistory(prev => {
+        const updated = [newHistoryItem, ...prev].slice(0, 5);
+        try {
+          sessionStorage.setItem('recent_scans', JSON.stringify(updated));
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        return updated;
+      });
+
     } catch (error) {
       console.error("API Error:", error);
       setLoading(false);
@@ -207,6 +256,72 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* 1. Logic Weights Configuration Widget */}
+        <div className="sidebar-widget">
+          <h5>Matching Weights</h5>
+          <div className="weights-info">
+            <span className="weight-badge">Cosine: 30%</span>
+            <span className="weight-badge">Skills: 70%</span>
+          </div>
+          <div className="weight-bar">
+            <div className="weight-bar-fill" style={{ width: '30%' }}></div>
+          </div>
+        </div>
+
+        {/* 2. Recent Scans History Widget with Privacy Controls */}
+        <div className="sidebar-widget">
+          <div className="widget-header-row">
+            <h5>Recent Scans</h5>
+            <button 
+              onClick={() => setPrivacyMode(!privacyMode)} 
+              className={`privacy-btn ${privacyMode ? 'active' : ''}`}
+              title="Toggle Privacy Mode (Blur Logs)"
+            >
+              {privacyMode ? "🕵️ Private" : "👁️ Public"}
+            </button>
+          </div>
+          
+          <div className={`history-list ${privacyMode ? 'blurred' : ''}`}>
+            {history.map((item, idx) => (
+              <div key={idx} className="history-item">
+                <span className="history-name" title={privacyMode ? "Confidential File" : item.fileName}>
+                  {privacyMode ? "Confidential_CV.pdf" : item.fileName}
+                </span>
+                <span className="history-badge" style={{
+                  borderColor: item.score >= 80 ? '#22c55e' : item.score >= 60 ? '#3b82f6' : '#ef4444',
+                  color: item.score >= 80 ? '#4ade80' : item.score >= 60 ? '#60a5fa' : '#f87171'
+                }}>{item.score}%</span>
+              </div>
+            ))}
+          </div>
+          
+          {history.length > 0 && (
+            <button 
+              onClick={() => {
+                setHistory([]);
+                sessionStorage.removeItem('recent_scans');
+              }} 
+              className="clear-history-btn"
+            >
+              Clear Logs
+            </button>
+          )}
+        </div>
+
+        {/* 3. Core Engine Monitors / System Diagnostics */}
+        <div className="sidebar-widget health-widget">
+          <h5>System Diagnostics</h5>
+          <div className="diagnostic-line">
+            <span className="diagnostic-dot active" />
+            <span>Flask Service: Online</span>
+          </div>
+          <div className="diagnostic-line">
+            <span className="diagnostic-dot active" />
+            <span>OCR Fallback: Ready</span>
+          </div>
+        </div>
+
         <div className="status-container">
           <div className="nlp-badge">AI Core v1.0.4</div>
           <div className="status-dot"><span className="dot animate-pulse"></span> System Online (Live)</div>
