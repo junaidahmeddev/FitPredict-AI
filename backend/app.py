@@ -60,12 +60,14 @@ def index():
     })
 
 def mask_pii(text):
-    """Mask email addresses and phone numbers to guarantee privacy & security constraints."""
+    """Mask email addresses, phone numbers, and home/street addresses to guarantee privacy compliance."""
     if not text: return ""
     # Mask Email
     text = re.sub(r'\b[\w\.-]+@[\w\.-]+\.\w{2,}\b', '[EMAIL_MASKED]', text)
     # Mask Phone Numbers (various standard international/local structures)
     text = re.sub(r'\b(?:\+?\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b', '[PHONE_MASKED]', text)
+    # Mask Home Addresses & Street Names
+    text = re.sub(r'\b\d+\s+(?:[Ss]treet|[Ss]t|[Rr]oad|[Rr]d|[Aa]venue|[Aa]ve|[Bb]lvd|[Cc]ourt|[Cc]t)\b[^\n]*', '[ADDRESS_MASKED]', text)
     return text
 
 def extract_text(file):
@@ -158,7 +160,7 @@ def analyze_resume():
         if not jd_text:
             jd_text = data.get('job_description', '')
 
-    # Mask Candidate PII (Phone/Email) before passing data to calculations
+    # Mask Candidate PII (Phone/Email/Address) before passing data to calculations
     resume_text_masked = mask_pii(resume_text)
 
     # Print extracted text preview to console for debug
@@ -183,18 +185,11 @@ def analyze_resume():
     match_score = calculate_match_score(resume_text_masked, jd_text)
     missing_skills, present_skills = identify_missing_skills(resume_text_masked, jd_text)
 
-    # Verdict & Confidence Mapping
+    # Verdict
     verdict = "Poor Match"
-    confidence = "Low"
-    if match_score >= 80:
-        verdict = "Excellent Match"
-        confidence = "High"
-    elif match_score >= 60:
-        verdict = "Good Match"
-        confidence = "Medium"
-    elif match_score >= 40:
-        verdict = "Average Match"
-        confidence = "Medium"
+    if match_score >= 80: verdict = "Excellent Match"
+    elif match_score >= 60: verdict = "Good Match"
+    elif match_score >= 40: verdict = "Average Match"
 
     # Dynamic Recruiter Recommendation Summary
     recommendation = f"The candidate matches {int(match_score)}% of the target requirements. "
@@ -214,10 +209,9 @@ def analyze_resume():
         "file_name": file_name,
         "resume_text": resume_text_masked,
         
-        # Talent Acquisition structured JSON format
+        # Talent Intelligence structured JSON format
         "MatchScore": int(match_score),
-        "ConfidenceLevel": confidence,
-        "MatchedSkills": [skill.capitalize() for skill in present_skills],
+        "DetectedSkills": [skill.capitalize() for skill in present_skills],
         "MissingSkills": [skill.capitalize() for skill in missing_skills],
         "Recommendation": recommendation
     })
