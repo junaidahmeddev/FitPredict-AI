@@ -1,15 +1,17 @@
-# 🚀 AI Resume Analyzer & Intelligent Job-Fit Predictor
+# 🚀 FitPredict-AI: Next-Gen AI Resume Analyzer & Job-Fit Predictor
 
-An advanced, full-stack NLP-powered recruitment tool that automates resume screening and job fit analysis. Using vector space models, the system parses uploaded resumes against specific job descriptions to provide accurate match scoring, identified skill sets, and automated technical skill gap analysis.
+An advanced, enterprise-grade NLP-powered recruitment tool that automates resume screening, text extraction, and semantic job fit analysis. Utilizing modern vector space models combined with fallback OCR mechanisms and fuzzy matching algorithms, the system evaluates resume alignment against target job descriptions with extreme precision.
 
 ---
 
 ## 🌟 Key Features
 
-* **Automated Text Extraction:** Seamlessly extracts and preprocesses raw content from PDF and DOCX formats.
-* **Smart Matching Logic (TF-IDF & Cosine Similarity):** Converts unstructured textual data into mathematical vectors to evaluate precise semantic alignment.
-* **Dynamic Skill Gaps Detection:** Scans the target job description for core competencies and flags missing technologies/tools as premium red visual badges.
-* **Premium Glassmorphic UI:** A clean, dark-themed analytics dashboard featuring dynamic state tracking, active pulse connection indicators, and graceful error recovery.
+* **Hybrid Text Extraction (Native & Scanned PDFs):** Seamlessly extracts raw content from PDF and DOCX formats. If a PDF yields no direct text (e.g., scanned images), the system automatically triggers a fallback OCR pipeline via **Pytesseract** and **pdf2image** (Poppler).
+* **Fuzzy Skill Matcher:** Replaces legacy strict matching with Levenshtein-distance fuzzy matching using the `thefuzz` library (configured at a robust 85% threshold) to capture typos, case variations, and n-gram skills.
+* **Weighted Scoring Engine:** Computes compatibility using a weighted matrix (30% Cosine Similarity via TF-IDF Vectorization, 70% Core Skill Intersection Overlap).
+* **Zero-Norm Safety Checks:** Gracefully handles empty vectors or non-standard profiles to prevent calculation errors, falling back entirely to skill matching.
+* **Self-Healing Dependencies:** Backend includes a startup wrapper that auto-detects and installs any missing runtime modules using the current Python environment context.
+* **Premium Glassmorphic UI:** Modern dark-themed dashboard built with React, styled with Tailwind CSS, and equipped with real-time feedback indicator elements.
 
 ---
 
@@ -17,33 +19,44 @@ An advanced, full-stack NLP-powered recruitment tool that automates resume scree
 
 | Component | Technologies Used |
 | :--- | :--- |
-| **Frontend** | React.js (Hooks, Modern Glassmorphism, Tailwind CSS) |
-| **Backend** | Flask (Python REST API) |
-| **AI / NLP Core** | NLTK (Tokenization, Stopwords Removal, WordNet) |
+| **Frontend** | React.js, Tailwind CSS, Axios, Glassmorphic CSS System |
+| **Backend** | Flask (Python REST API), PyPDF2, docx2txt |
+| **OCR Pipeline** | Tesseract-OCR, pdf2image (Poppler) |
+| **Fuzzy Matching** | thefuzz, python-Levenshtein |
+| **AI / NLP Core** | NLTK (Tokenization, Stopwords Filtering, WordNet Lemmatization) |
 | **Machine Learning** | Scikit-learn (TF-IDF Vectorizer, Cosine Similarity) |
-| **Hosting** | Vercel (Frontend Deployment) |
 
 ---
 
-## 📊 Core Architecture & Logic
+## 📊 Core Matching & Extraction Pipeline
 
-1. **Preprocessing Pipeline:** The system cleans the input text by removing punctuation, formatting, and standard NLTK stop words.
-2. **Vectorization:** Text structures from both the Resume and Job Description are converted into sparse numerical matrices using **TF-IDF Vectorization**.
-3. **Similarity Calculation:** The angular distance between the two vectors is calculated using **Cosine Similarity**, returning a definitive match score between `0.0` and `1.0`.
-4. **Gap Analysis:** A frontend logic engine compares extracted profile skills against requested job keywords to generate real-time deficiency markers.
+```mermaid
+graph TD
+    A[Upload Resume PDF/DOCX] --> B{PDF Type?}
+    B -->|Native Text| C[Extract text using PyPDF2]
+    B -->|Scanned Image| D[Convert PDF pages to Images via Poppler]
+    D --> E[Run OCR via Pytesseract]
+    C --> F[Regex Preprocessing & Stopword removal]
+    E --> F
+    F --> G[Extract Skills & fuzzy match against Database]
+    G --> H[Calculate Vector Cosine Similarity & Skill Overlap]
+    H --> I[Return JSON Match & Gap Reports]
+```
 
 ---
 
 ## ⚙️ Getting Started & Local Setup
 
-Follow these steps to configure and run the full-stack system locally on your machine.
+Follow these steps to configure and run the full-stack system locally.
 
-### 1. Repository Setup
+### 1. Clone the Repository
 ```bash
-git clone [https://github.com/junaidahmeddev/Next-Gen-AI-Resume-Analyzer.git](https://github.com/junaidahmeddev/Next-Gen-AI-Resume-Analyzer.git)
-cd Next-Gen-AI-Resume-Analyzer
-2. Backend Configuration (Flask)
-Bash
+git clone https://github.com/junaidahmeddev/FitPredict-AI.git
+cd FitPredict-AI
+```
+
+### 2. Backend Configuration (Flask)
+```bash
 # Navigate to the backend folder
 cd backend
 
@@ -57,25 +70,30 @@ source .venv/bin/activate
 # Install requirements & start server
 pip install -r requirements.txt
 python app.py
-The core NLP server will launch dynamically on http://127.0.0.1:5000.
+```
+The server will run on `http://127.0.0.1:5000`. On launch, the self-healing block will verify and auto-install any missing dependencies.
 
-3. Frontend Configuration (React)
-Open a new separate terminal window and run:
+### 3. External Dependencies (For OCR Fallback)
+To enable scanned PDF support:
+1. **Tesseract OCR:** Download the binary from [Tesseract OCR Windows Builds](https://github.com/UB-Mannheim/tesseract/wiki) and install to `C:\Program Files\Tesseract-OCR\`.
+2. **Poppler:** Extract Poppler to `C:\poppler-26.02.0\Library\bin` or configure it in your System Path.
 
-Bash
-# Navigate to the frontend folder from the root
-cd frontend
+### 4. Frontend Configuration (React)
+```bash
+# Navigate to the frontend folder
+cd ../frontend
 
 # Install Node modules & start development server
 npm install
 npm start
-The interactive dashboard interface will open automatically on http://localhost:3001.
+```
+The dashboard interface will automatically open on `http://localhost:3000`.
 
-📈 Evaluation & Testing Profiles
-To verify the precision of the matching matrix, you can test using these two polar profiles:
+---
 
-Profile A (High Match Test): Upload a Python-focused engineering resume against a Machine Learning / Backend Developer JD. Expect a high match score (>70%) with identified tags like Python, SQL, and Flask.
+## 📈 Evaluation Matrix
+* **Profile A (High Match):** Upload a technical engineering resume with Python, Flask, or React against a matching Software Engineer description. The system will report high scores with verified keyword matrices.
+* **Profile B (Low Match/Cross-Field):** Upload the same engineering resume against a Graphic Designer job description. The system will highlight gaps in core design skills (e.g., Figma, Photoshop, typography).
 
-Profile B (Low Match/Cross-Field Test): Upload the same engineering resume against a Senior Graphic Designer JD. Expect a drastically low score (~25%) along with clear amber/red labels highlighting technical gaps like Photoshop, Figma, and Illustrator.
-
-⭐ Star this repository if you find it useful! Developed with 💻 by Junaid Ahmed
+---
+⭐ Developed with 💻 by [Junaid Ahmed](https://github.com/junaidahmeddev)

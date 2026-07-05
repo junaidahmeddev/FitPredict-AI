@@ -7,3 +7,7 @@ PyPDF2
 docx2txt
 pandas
 numpy
+pytesseract
+pdf2image
+thefuzz
+python-Levenshtein
