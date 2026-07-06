@@ -1,17 +1,25 @@
-# 🚀 FitPredict-AI: Next-Gen AI Resume Analyzer & Job-Fit Predictor
+# 🚀 FitPredict-AI: Enterprise AI Resume Analyzer & Capstone Analytics Dashboard
 
-An advanced, enterprise-grade NLP-powered recruitment tool that automates resume screening, text extraction, and semantic job fit analysis. Utilizing modern vector space models combined with fallback OCR mechanisms and fuzzy matching algorithms, the system evaluates resume alignment against target job descriptions with extreme precision.
+An advanced, production-grade, and professional multi-view document intelligence and talent acquisition system. Designed as a final-year university capstone project, **FitPredict-AI** automates resume ingestion, structural text extraction, fuzzy keyword indexing, and semantic job-fit analysis.
+
+The system features a custom state-based multi-page dashboard, real-time auto-balancing weight configurations, bulk processing pipelines, history logs database, and print-optimized PDF reporting.
 
 ---
 
 ## 🌟 Key Features
 
-* **Hybrid Text Extraction (Native & Scanned PDFs):** Seamlessly extracts raw content from PDF and DOCX formats. If a PDF yields no direct text (e.g., scanned images), the system automatically triggers a fallback OCR pipeline via **Pytesseract** and **pdf2image** (Poppler).
-* **Fuzzy Skill Matcher:** Replaces legacy strict matching with Levenshtein-distance fuzzy matching using the `thefuzz` library (configured at a robust 85% threshold) to capture typos, case variations, and n-gram skills.
-* **Weighted Scoring Engine:** Computes compatibility using a weighted matrix (30% Cosine Similarity via TF-IDF Vectorization, 70% Core Skill Intersection Overlap).
-* **Zero-Norm Safety Checks:** Gracefully handles empty vectors or non-standard profiles to prevent calculation errors, falling back entirely to skill matching.
+* **Multi-Page Capstone Navigation Architecture:** Transitions the application from a single form into a comprehensive dashboard containing:
+  - **View 1: Home / Ingestion:** Upload resumes and paste target requirements.
+  - **View 2: Report Analytics:** In-depth match visualization, technical subscore metrics (Tech, Education, Traits), matching keywords tags, requirements gaps, and recruitment action plans.
+  - **View 3: Scan Database Logs:** Review and load detailed reports of all past candidate matching operations.
+  - **View 4: Advanced Bulk Leaderboard:** Parallel candidate ingestion comparison that ranks bulk files instantly.
+  - **View 5: Sliders Config:** Customize mathematical matching weights and NLP models.
+* **Auto-Balancing Slider Weight Engine:** Modifying any slider (Technical skills, Education degrees, or Traits) automatically balances the remaining parameters proportionally to maintain a sum of exactly **100%**.
+* **Model Selection Pipeline:** Toggle between **TF-IDF Term Overlap Vectorization** (fast keyword mapping) and **BERT Semantic Transformer** (synonym matching and contextual trait analysis).
+* **Hybrid Ingestion OCR Fallback:** Extracts content from native PDF and DOCX files. If a scanned document is detected, the system triggers a fallback OCR pipeline using **Pytesseract** and **pdf2image** (Poppler).
+* **Fuzzy Skill Matcher:** Configured with a Levenshtein-distance fuzzy parser (at an 85% matching threshold) via `thefuzz` to prevent keyword mismatches due to spacing, casing, or typo variances.
+* **Print-Optimized PDF Export:** Generates clean, printer-friendly A4 analysis reports by applying dedicated print media stylesheets to hide interface noise.
 * **Self-Healing Dependencies:** Backend includes a startup wrapper that auto-detects and installs any missing runtime modules using the current Python environment context.
-* **Premium Glassmorphic UI:** Modern dark-themed dashboard built with React, styled with Tailwind CSS, and equipped with real-time feedback indicator elements.
 
 ---
 
@@ -19,7 +27,7 @@ An advanced, enterprise-grade NLP-powered recruitment tool that automates resume
 
 | Component | Technologies Used |
 | :--- | :--- |
-| **Frontend** | React.js, Tailwind CSS, Axios, Glassmorphic CSS System |
+| **Frontend** | React.js, Custom CSS Design System, Axios, Glassmorphic Overlay |
 | **Backend** | Flask (Python REST API), PyPDF2, docx2txt |
 | **OCR Pipeline** | Tesseract-OCR, pdf2image (Poppler) |
 | **Fuzzy Matching** | thefuzz, python-Levenshtein |
@@ -28,7 +36,7 @@ An advanced, enterprise-grade NLP-powered recruitment tool that automates resume
 
 ---
 
-## 📊 Core Matching & Extraction Pipeline
+## 📊 Core Matching & Ingestion Pipeline
 
 ```mermaid
 graph TD
